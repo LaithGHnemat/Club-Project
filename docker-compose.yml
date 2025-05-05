@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: club
+      MYSQL_ROOT_PASSWORD: password123
+    ports:
+      - "3306:3306"
+    networks:
+      - clubnet
+    volumes:
+      - db_data:/var/lib/mysql  # ← ربط البيانات بالـ volume
+    healthcheck:
+      test: ["CMD", "mysqladmin", "--user=root", "--password=password123", "ping", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  springboot:
+    build: .
+    container_name: springboot
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/club
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: password123
+    ports:
+      - "8080:8080"
+    networks:
+      - clubnet
+
+networks:
+  clubnet:
+    driver: bridge
+
+volumes:
+  db_data:  # ← تعريف الـ volume
